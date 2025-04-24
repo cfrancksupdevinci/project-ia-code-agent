@@ -25,11 +25,18 @@ def main():
     # Construction du prompt en fonction du mode
     prompt = f"Mode : {args.mode}. Analysez le code suivant et fournissez des commentaires détaillés :"
 
-    # Appel au modèle et affichage du résultat
+        # Appel au modèle et affichage du résultat
     try:
         review = llm_client.run(prompt, code_snippet)
         print("=== Résultat de la revue ===")
         print(review)
+    
+        # Écrire le résultat dans review_output.md
+        output_file = "reviews/review_output.md"
+        with open(output_file, "w", encoding="utf-8") as file:
+            file.write("# Résultat de la revue\n\n")
+            file.write(review)
+        print(f"Le résultat a été écrit dans {output_file}")
     except Exception as e:
         print(f"Erreur lors de l'analyse : {e}")
 
