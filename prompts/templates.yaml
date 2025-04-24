@@ -1,4 +1,3 @@
-# templates.yaml
 strict:
   description: Act as a strict code reviewer...
 mentor:
