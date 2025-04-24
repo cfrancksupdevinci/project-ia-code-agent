@@ -23,7 +23,21 @@ class CodeAnalyzer:
         return f"{self.prompt_template}\n\nVoici le code à analyser :\n{code_snippet}"
     
 if __name__ == "__main__":
-    analyzer = CodeAnalyzer(mode="mentor")
-    code_snippet = "def add(a, b): return a + b"
+    # Spécifiez le mode
+    mode = "mentor"
+
+    # Chemin vers le fichier à analyser
+    file_path = "examples/clean_script.py"
+
+    try:
+        # Lire le contenu du fichier
+        with open(file_path, "r") as file:
+            code_snippet = file.read()
+    except FileNotFoundError:
+        print(f"Erreur : Le fichier {file_path} est introuvable.")
+        exit(1)
+
+    # Initialiser l'analyseur et construire le prompt
+    analyzer = CodeAnalyzer(mode=mode)
     prompt = analyzer.construct_prompt(code_snippet)
     print(prompt)

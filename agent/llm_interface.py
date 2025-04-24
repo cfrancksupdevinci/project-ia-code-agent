@@ -4,6 +4,7 @@ import json
 import yaml
 import openai
 from agent.analyzer import CodeAnalyzer
+import os
 
 class LLMClient:
     def __init__(self, provider, model=None):
@@ -17,20 +18,21 @@ class LLMClient:
     
     def run(self, mode, code_snippet):
         """Construit le prompt en fonction du mode et exécute l'appel au modèle."""
-        analyzer = CodeAnalyzer(mode)  # Passe uniquement le mode (par exemple, 'mentor')
-        prompt = analyzer.construct_prompt(code_snippet)  # Le prompt est construit ici
+        print(f"Mode reçu dans run : {mode}")  # Debug
+        analyzer = CodeAnalyzer(mode)
+        prompt = analyzer.construct_prompt(code_snippet)
+        print(f"Prompt construit : {prompt}")  # Debug
     
-        # Appeler le modèle en fonction du fournisseur
         if self.provider == "openai":
-            return self._call_openai(prompt, code_snippet)
+            return self._call_openai(prompt)
         elif self.provider == "ollama":
-            return self._call_ollama(prompt, code_snippet)
+            return self._call_ollama(prompt)
         else:
             raise ValueError(f"Fournisseur non supporté : {self.provider}")
     
-    def _call_ollama(self, prompt, code_snippet):
+    def _call_ollama(self, prompt, code_snippet=None):
         """Appelle le modèle Mistral via Ollama."""
-        input_text = f"{prompt}\n\n{code_snippet}"
+        input_text = f"{prompt}\n\n{code_snippet}" if code_snippet else prompt
         try:
             response = requests.post(
                 "http://localhost:11434/api/generate",
@@ -52,16 +54,15 @@ class LLMClient:
         except requests.exceptions.ConnectionError:
             raise RuntimeError("Impossible de se connecter au service Ollama. Assurez-vous qu'il est actif.")
     
-    def _call_openai(self, prompt, code_snippet):
+    def _call_openai(self, prompt):
         """Appelle le modèle OpenAI."""
-        input_text = f"{prompt}\n\n{code_snippet}"
         try:
             openai.api_key = self.OPENAI_API_KEY
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",  # Remplacez par le modèle souhaité (par exemple, gpt-4)
                 messages=[
                     {"role": "system", "content": "Vous êtes un assistant utile pour analyser du code Python."},
-                    {"role": "user", "content": input_text}
+                    {"role": "user", "content": prompt}
                 ],
                 max_tokens=1500,
                 temperature=0.7
@@ -70,10 +71,17 @@ class LLMClient:
         except openai.OpenAIError as e:
             raise RuntimeError(f"Erreur OpenAI : {e}")
     
-    def load_template(mode):
+    def load_template(self, mode):
         """Charge le template correspondant au mode depuis templates.yaml."""
-        with open("prompts/templates.yaml", "r") as file:
-            templates = yaml.safe_load(file)
-        if mode not in templates:
-            raise ValueError(f"Mode '{mode}' non trouvé dans templates.yaml")
-        return templates[mode]["description"]
+        try:
+            with open("prompts/templates.yaml", "r") as file:
+                templates = yaml.safe_load(file)
+            print(f"Templates chargés : {templates}")  # Debug
+            if mode not in templates:
+                raise ValueError(f"Mode '{mode}' non trouvé dans templates.yaml")
+            print(f"Description pour le mode '{mode}' : {templates[mode]['description']}")  # Debug
+            return templates[mode]["description"]
+        except FileNotFoundError:
+            raise RuntimeError("Le fichier templates.yaml est introuvable.")
+        except yaml.YAMLError as e:
+            raise RuntimeError(f"Erreur lors du chargement de templates.yaml : {e}")

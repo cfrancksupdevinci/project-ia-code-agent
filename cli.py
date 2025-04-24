@@ -8,7 +8,7 @@ def main():
     parser = argparse.ArgumentParser(description="AI Code Review Agent")
     parser.add_argument("--file", required=True, help="Chemin du fichier Python à analyser")
     parser.add_argument("--mode", required=True, help="Mode d'analyse (strict, mentor, test_focus)")
-    parser.add_argument("--provider", required=True, help="Fournisseur LLM (ollama)")
+    parser.add_argument("--provider", required=True, help="Fournisseur LLM (openai, ollama)")
     args = parser.parse_args()
 
     # Lecture du fichier Python
@@ -20,14 +20,12 @@ def main():
         return
 
     # Initialisation du client LLM
-    llm_client = LLMClient(provider=args.provider, model="mistral")
+    llm_client = LLMClient(provider=args.provider)
 
-    # Construction du prompt en fonction du mode
-    prompt = f"Mode : {args.mode}. Analysez le code suivant et fournissez des commentaires détaillés :"
-
-        # Appel au modèle et affichage du résultat
+    # Appel au modèle et affichage du résultat
     try:
-        review = llm_client.run(prompt, code_snippet)
+        # Passe uniquement args.mode (par exemple, 'mentor') à llm_client.run
+        review = llm_client.run(args.mode, code_snippet)
         print("=== Résultat de la revue ===")
         print(review)
     
